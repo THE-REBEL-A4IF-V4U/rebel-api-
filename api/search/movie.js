@@ -4,13 +4,13 @@ import { getUserIP } from "../../lib/ipDetect.js";
 import { log } from "../../lib/logger.js";
 
 export default async function handler(req, res) {
-  const q = req.query.q;
-  if (!q) {
-    return res.status(400).json({ error: "Missing q (movie name)" });
+  const name = req.query.name;
+  if (!name) {
+    return res.status(400).json({ error: "Missing name (movie)" });
   }
 
   const ip = getUserIP(req);
-  log("TMDB", `Search movie: ${q}`, ip);
+  log("TMDB", `Search movie: ${name}`, ip);
 
   try {
     const keys = await getKeys();
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     }
 
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(
-      q
+      name
     )}`;
 
     const r = await axios.get(url);
@@ -43,16 +43,16 @@ export default async function handler(req, res) {
       rating: movie.vote_average,
       poster: movie.poster_path
         ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-        : null
-    }
-             developer: {
+        : null,
+      developer: {
         name: "MD Ariful Islam Asif",
         facebook: "https://www.facebook.com/theRebelAsif",
         organization: "The Rebel Squad",
         role: "CEO"
       }
-            );
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "TMDB fetch failed" });
   }
 }
