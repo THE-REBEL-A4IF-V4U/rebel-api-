@@ -5,42 +5,28 @@ import { log } from "../../lib/logger.js";
 
 export default async function handler(req, res) {
   const q = req.query.q;
-  
-  // ইনপুট চেক
   if (!q) return res.status(400).json({ error: "Missing q" });
 
   const ip = getUserIP(req);
   log("AI", "Ask request", ip);
 
   try {
-    // Key ফোল্ডার থেকে বা Env থেকে আনা
     const keys = await getKeys();
     const GEMINI_KEY = keys.GEMINI_API_KEY;
 
     if (!GEMINI_KEY) {
-      console.error("Server Error: Gemini Key Not Found");
-      return res.status(500).json({ error: "Configuration Error: Key missing" });
+      return res.status(500).json({ error: "GEMINI key missing" });
     }
 
-    // Axios রিকোয়েস্ট (v1beta ব্যবহার করা হয়েছে)
+    // 👇 পরিবর্তন: মডেলের নাম 'gemini-1.5-flash-latest' করা হয়েছে
     const r = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
       {
-        contents: [
-          { 
-            role: "user",
-            parts: [{ text: q }] 
-          }
-        ]
+        contents: [{ parts: [{ text: q }] }]
       },
       {
-        headers: {
-          "Content-Type": "application/json"
-        },
-        // Key টি এখানে params হিসেবে দেওয়া নিরাপদ এবং ক্লিন
-        params: {
-          key: GEMINI_KEY
-        }
+        headers: { "Content-Type": "application/json" },
+        params: { key: GEMINI_KEY }
       }
     );
 
@@ -53,14 +39,13 @@ export default async function handler(req, res) {
       reply,
       source: "github-keys"
     });
-
   } catch (err) {
-    // সার্ভার কনসোলে আসল এররটা প্রিন্ট করা জরুরি ডিবাগিংয়ের জন্য
-    console.error("Gemini API Error:", err.response?.data || err.message);
+    // ডিবাগিংয়ের জন্য পুরো এররটা দেখুন
+    console.error("API Error Detail:", err.response?.data); 
     
     res.status(500).json({ 
-      error: "AI failed", 
-      details: err.response?.data?.error?.message || "Internal Server Error"
+        error: "AI failed", 
+        details: err.response?.data?.error?.message || err.message 
     });
   }
 }
