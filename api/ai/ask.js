@@ -1,40 +1,53 @@
 import axios from "axios";
-import { getKeys } from "../../lib/keys.js";
 import { getUserIP } from "../../lib/ipDetect.js";
 import { log } from "../../lib/logger.js";
 
+const GEMINI_KEY = "AIzaSyDrbt2Xt83Qko_gfp4rhHysB4jqi1uTYqs";
+
 export default async function handler(req, res) {
   const q = req.query.q;
-  if (!q) return res.status(400).json({ error: "Missing q" });
+  if (!q) {
+    return res.status(400).json({ error: "Missing q" });
+  }
 
   const ip = getUserIP(req);
-  log("AI", "Ask request", ip);
+  log("AI", `Ask request: ${q}`, ip);
 
   try {
-    const keys = await getKeys();
-    const GEMINI_KEY = keys.GEMINI_API_KEY;
-
-    if (!GEMINI_KEY) {
-      return res.status(500).json({ error: "GEMINI key missing" });
-    }
-
-    const r = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+    const response = await axios.post(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
       {
-        contents: [{ parts: [{ text: q }] }]
+        contents: [
+          {
+            parts: [{ text: q }]
+          }
+        ]
+      },
+      {
+        params: {
+          key: GEMINI_KEY
+        },
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
 
     const reply =
-      r.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response";
 
     res.json({
       success: true,
       ip,
       reply,
-      source: "github-keys"
+      model: "gemini-1.5-flash"
     });
   } catch (err) {
-    res.status(500).json({ error: "AI failed" });
+    console.error("Gemini API error:", err.response?.data || err.message);
+    res.status(500).json({
+      error: "AI failed",
+      details: err.response?.data || null
+    });
   }
 }
