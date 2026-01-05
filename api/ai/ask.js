@@ -1,26 +1,35 @@
 import axios from "axios";
+import { getKeys } from "../../lib/keys.js";
 import { getUserIP } from "../../lib/ipDetect.js";
 import { log } from "../../lib/logger.js";
 
-const GEMINI_KEY = "AIzaSyDrbt2Xt83Qko_gfp4rhHysB4jqi1uTYqs";
-
 export default async function handler(req, res) {
   const q = req.query.q;
-  if (!q) {
-    return res.status(400).json({ error: "Missing q" });
-  }
+  
+  // ইনপুট চেক
+  if (!q) return res.status(400).json({ error: "Missing q" });
 
   const ip = getUserIP(req);
-  log("AI", q, ip);
+  log("AI", "Ask request", ip);
 
   try {
-    const response = await axios.post(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
+    // Key ফোল্ডার থেকে বা Env থেকে আনা
+    const keys = await getKeys();
+    const GEMINI_KEY = keys.GEMINI_API_KEY;
+
+    if (!GEMINI_KEY) {
+      console.error("Server Error: Gemini Key Not Found");
+      return res.status(500).json({ error: "Configuration Error: Key missing" });
+    }
+
+    // Axios রিকোয়েস্ট (v1beta ব্যবহার করা হয়েছে)
+    const r = await axios.post(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
       {
         contents: [
-          {
+          { 
             role: "user",
-            parts: [{ text: q }]
+            parts: [{ text: q }] 
           }
         ]
       },
@@ -28,6 +37,7 @@ export default async function handler(req, res) {
         headers: {
           "Content-Type": "application/json"
         },
+        // Key টি এখানে params হিসেবে দেওয়া নিরাপদ এবং ক্লিন
         params: {
           key: GEMINI_KEY
         }
@@ -35,18 +45,22 @@ export default async function handler(req, res) {
     );
 
     const reply =
-      response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response";
+      r.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
 
     res.json({
       success: true,
+      ip,
       reply,
-      model: "gemini-1.5-flash"
+      source: "github-keys"
     });
+
   } catch (err) {
-    res.status(500).json({
-      error: "AI failed",
-      details: err.response?.data || err.message
+    // সার্ভার কনসোলে আসল এররটা প্রিন্ট করা জরুরি ডিবাগিংয়ের জন্য
+    console.error("Gemini API Error:", err.response?.data || err.message);
+    
+    res.status(500).json({ 
+      error: "AI failed", 
+      details: err.response?.data?.error?.message || "Internal Server Error"
     });
   }
 }
