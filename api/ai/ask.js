@@ -6,16 +6,14 @@ const GEMINI_KEY = "AIzaSyDrbt2Xt83Qko_gfp4rhHysB4jqi1uTYqs";
 
 export default async function handler(req, res) {
   const q = req.query.q;
-  if (!q) {
-    return res.status(400).json({ error: "Missing q" });
-  }
+  if (!q) return res.status(400).json({ error: "Missing q" });
 
   const ip = getUserIP(req);
-  log("AI", `Ask request: ${q}`, ip);
+  log("AI", q, ip);
 
   try {
     const response = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
       {
         contents: [
           {
@@ -24,12 +22,8 @@ export default async function handler(req, res) {
         ]
       },
       {
-        params: {
-          key: GEMINI_KEY
-        },
-        headers: {
-          "Content-Type": "application/json"
-        }
+        headers: { "Content-Type": "application/json" },
+        params: { key: GEMINI_KEY }
       }
     );
 
@@ -39,15 +33,13 @@ export default async function handler(req, res) {
 
     res.json({
       success: true,
-      ip,
       reply,
-      model: "gemini-1.5-flash"
+      model: "gemini-1.5-flash-latest"
     });
   } catch (err) {
-    console.error("Gemini API error:", err.response?.data || err.message);
     res.status(500).json({
       error: "AI failed",
-      details: err.response?.data || null
+      details: err.response?.data || err.message
     });
   }
 }
