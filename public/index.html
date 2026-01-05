@@ -1,23 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Rebel AI</title>
+  <title>Rebel API Dashboard</title>
   <meta charset="utf-8" />
-</head>
-<body>
-  <h1>Rebel AI</h1>
-  <input id="q" placeholder="Ask something" />
-  <button onclick="ask()">Ask</button>
-  <pre id="out"></pre>
-
-  <script>
-    async function ask() {
-      const q = document.getElementById("q").value;
-      const r = await fetch("/api/ai/ask?q=" + encodeURIComponent(q));
-      const j = await r.json();
-      document.getElementById("out").innerText =
-        j.reply || j.error || "No response";
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 20px;
     }
-  </script>
+    h1 {
+      color: #38bdf8;
+    }
+    section {
+      background: #020617;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    input, button {
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      max-width: 400px;
+    }
+    button {
+      background: #38bdf8;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    pre {
+      background: #020617;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    audio, img {
+      margin-top: 10px;
+      max-width: 300px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🔥 Rebel API Dashboard</h1>
+
+<!-- AI -->
+<section>
+  <h2>🤖 AI Ask</h2>
+  <input id="ai_q" placeholder="Ask AI something" />
+  <button onclick="askAI()">Ask</button>
+  <pre id="ai_out"></pre>
+</section>
+
+<!-- Movie -->
+<section>
+  <h2>🎬 Movie Search (TMDB)</h2>
+  <input id="movie_name" placeholder="Movie name" />
+  <button onclick="searchMovie()">Search</button>
+  <pre id="movie_out"></pre>
+</section>
+
+<!-- Anime -->
+<section>
+  <h2>🍥 Anime Search</h2>
+  <input id="anime_name" placeholder="Anime name" />
+  <button onclick="searchAnime()">Search</button>
+  <pre id="anime_out"></pre>
+</section>
+
+<!-- TikTok -->
+<section>
+  <h2>🎵 TikTok Downloader</h2>
+  <input id="tiktok_url" placeholder="TikTok video URL" />
+  <button onclick="downloadTikTok()">Download</button>
+  <pre id="tiktok_out"></pre>
+</section>
+
+<!-- TTS -->
+<section>
+  <h2>🔊 Text To Speech</h2>
+  <input id="tts_text" placeholder="Text" />
+  <input id="tts_lang" placeholder="Language (en, bn, hi)" />
+  <button onclick="playTTS()">Generate</button>
+  <audio id="tts_audio" controls></audio>
+</section>
+
+<!-- Emoji Mix -->
+<section>
+  <h2>😀 Emoji Mix</h2>
+  <input id="emoji1" placeholder="Emoji 1" />
+  <input id="emoji2" placeholder="Emoji 2" />
+  <button onclick="mixEmoji()">Mix</button>
+  <br />
+  <img id="emoji_img" />
+</section>
+
+<script>
+  async function askAI() {
+    const q = ai_q.value;
+    const r = await fetch(`/api/ai/ask?q=${encodeURIComponent(q)}`);
+    ai_out.innerText = JSON.stringify(await r.json(), null, 2);
+  }
+
+  async function searchMovie() {
+    const name = movie_name.value;
+    const r = await fetch(`/api/search/movie?name=${encodeURIComponent(name)}`);
+    movie_out.innerText = JSON.stringify(await r.json(), null, 2);
+  }
+
+  async function searchAnime() {
+    const name = anime_name.value;
+    const r = await fetch(`/api/anime/search?name=${encodeURIComponent(name)}`);
+    anime_out.innerText = JSON.stringify(await r.json(), null, 2);
+  }
+
+  async function downloadTikTok() {
+    const url = tiktok_url.value;
+    const r = await fetch(`/api/tiktok?url=${encodeURIComponent(url)}`);
+    tiktok_out.innerText = JSON.stringify(await r.json(), null, 2);
+  }
+
+  async function playTTS() {
+    const text = tts_text.value;
+    const lang = tts_lang.value || "en";
+    tts_audio.src = `/api/tts?text=${encodeURIComponent(text)}&lang=${lang}`;
+    tts_audio.play();
+  }
+
+  async function mixEmoji() {
+    const e1 = emoji1.value;
+    const e2 = emoji2.value;
+    emoji_img.src = `/api/emojimix?emoji1=${encodeURIComponent(e1)}&emoji2=${encodeURIComponent(e2)}`;
+  }
+</script>
+
 </body>
 </html>
